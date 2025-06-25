@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TODO App</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>TODO List</h1>
+        <form action="/add" method="POST">
+            <input type="text" name="todo" placeholder="Enter a task" required>
+            <button type="submit">Add</button>
+        </form>
+
+        <ul>
+            <% todos.forEach((todo, index) => { %>
+                <li>
+                    <%= todo %>
+                    <form action="/delete" method="POST" style="display:inline;">
+                        <input type="hidden" name="index" value="<%= index %>">
+                        <button type="submit">Delete</button>
+                    </form>
+                </li>
+            <% }) %>
+        </ul>
+    </div>
+</body>
+</html>
