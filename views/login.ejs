@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../public/style.css">
+    <title>Sign up</title>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gray-950 text-white font-sans">
+     <div class="space-y-4">
+    <div class=" max-w-md p-8 rounded-2xl shadow-xl space-y-6 border-2 mt-3 border-gray-700 items-center flex">
+        <form action="/user/login" method="post">
+        <h1 class="text-center text-2xl p-2 font-bold text-blue-900 text-shadow-cyan-400">Login</h1>
+        <label for="email">Email:</label><br>
+        <input class="border-2 border-blue-400 mt-2 p-1 bg-gray-800 rounded-lg hover:border-blue-800" type="email" name="email" id="email"><br>
+        <label for="password">Password:</label><br>
+        <input class="border-2 border-blue-400 mt-2 p-1 bg-gray-800 rounded-lg hover:border-blue-800" type="password" name="password" id="password"><br>
+        <button type="submit" class="border-2 border-blue-400 mt-2 p-1 rounded-lg hover:hover:bg-blue-600 transition hover:scale-110 w-full">Sign Up</button>
+    </form>
+    </div>
+    </div>
+</body>
+</html>

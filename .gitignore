@@ -1,0 +1,4 @@
+node_modules
+.env
+./model/seed.js
+./model/todo.js

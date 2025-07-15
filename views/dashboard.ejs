@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Video Encoding Tool">
+  <meta name="keywords" content="editor, tool, video">
+  <meta name="author" content="Majid">
+  <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
+  <title>VQConverter - Video Encoder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
+  <style>
+    body {
+      padding-top: 70px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding-top: 60px;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+<!-- Navbar -->
+<nav class="bg-white dark:bg-gray-900 fixed w-full z-20 top-0 start-0 border-b border-gray-200 dark:border-gray-600">
+  <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+    <a href="https://vq.majid.pro/" class="flex items-center space-x-3 rtl:space-x-reverse">
+      <img src="https://flowbite.com/docs/images/logo.svg" class="h-8" alt="Flowbite Logo">
+      <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">VQConverter</span>
+    </a>
+    <div class="flex md:order-2 space-x-3">
+      <a href="/user/logout" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700">LogOut</a>
+      <button data-collapse-toggle="navbar-sticky" type="button" class="inline-flex items-center p-2 w-10 h-10 md:hidden text-sm text-gray-500 rounded-lg hover:bg-gray-100 focus:outline-none">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 17 14" xmlns="http://www.w3.org/2000/svg">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1h15M1 7h15M1 13h15"/>
+        </svg>
+      </button>
+    </div>
+    <div class="hidden w-full md:flex md:w-auto md:order-1" id="navbar-sticky">
+      <ul class="flex flex-col p-4 md:p-0 mt-4 font-medium border rounded-lg bg-gray-50 md:flex-row md:space-x-8 md:mt-0 md:border-0 md:bg-white dark:bg-gray-800 md:dark:bg-gray-900">
+        <li><a href="/" class="block py-2 px-3 text-blue-700" aria-current="page">Home</a></li>
+        <li><a href="/about" class="block py-2 px-3 text-gray-900 hover:text-blue-700 dark:text-white">Analytics</a></li>
+        <li><a href="/history" class="block py-2 px-3 text-gray-900 hover:text-blue-700 dark:text-white"> All Movies</a></li>
+        <li><a href="/contact" class="block py-2 px-3 text-gray-900 hover:text-blue-700 dark:text-white">All Series</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Main Container -->
+<div class="container mx-auto px-4 py-8">
+  <div class="w-full max-w-3xl mx-auto bg-white rounded-2xl shadow-xl p-6 md:p-8">
+    <h2 class="text-3xl font-bold text-center text-indigo-600 mb-6">🎬 Welcome Admin!</h2>
+
+    <!-- Mode Selector -->
+    <label class="block font-medium mb-1">⚙️ Add New:</label>
+    <select name="selected_mode" id="selected_mode" class="w-full mb-6 p-2 border rounded-lg" onchange="handleModeChange()">
+      <option value="0">Movie</option>
+      <option value="1">TV Show</option>
+    </select>
+
+    <!-- Form (Movie or TV show) -->
+    <form action="/api/addmovie" method="POST" class="space-y-4 md:space-y-5" id="mainForm">
+
+      <!-- Movie Fields -->
+      <div id="movie_fields">
+        <label class="block font-medium">🎥 Title:</label>
+        <input type="text" name="title" class="w-full p-2 border rounded-lg" placeholder="e.g. Avengers" required>
+
+        <label class="block font-medium">🏆 Rating:</label>
+        <input type="number" name="rating" class="w-full p-2 border rounded-lg" placeholder="e.g. 7.5" min="0" max="10" step="0.1" required>
+
+        <label class="block font-medium">ℹ️ Plot:</label>
+        <input type="text" name="plot" class="w-full p-2 border rounded-lg" placeholder="Short description" required>
+
+        <label class="block font-medium">⚙️ Genres:</label>
+        <select name="genres" class="w-full p-2 border rounded-lg" multiple>
+          <option value="Action">Action</option>
+          <option value="Romance">Romance</option>
+          <option value="Drama">Drama</option>
+          <option value="Comedy">Comedy</option>
+          <option value="Thriller">Thriller</option>
+          <option value="Sci-Fi">Sci-Fi</option>
+        </select>
+
+        <label class="block font-medium">📽️ Casts (comma separated):</label>
+        <input type="text" name="casts" class="w-full p-2 border rounded-lg" placeholder="e.g. Robert Downey Jr., Chris Evans" required>
+
+        <label class="block font-medium">📽️ Directors (comma separated):</label>
+        <input type="text" name="directors" class="w-full p-2 border rounded-lg" placeholder="e.g. Joss Whedon" required>
+
+        <label class="block font-medium">🌐 Country:</label>
+        <input type="text" name="country" class="w-full p-2 border rounded-lg" placeholder="e.g. USA" required>
+
+        <label class="block font-medium">Poster URL:</label>
+        <input type="url" name="poster" class="w-full p-2 border rounded-lg" placeholder="e.g. https://example.com/poster.jpg" required>
+
+        <label class="block font-medium">Movie Source URL:</label>
+        <input type="url" name="movie_src" class="w-full p-2 border rounded-lg" placeholder="e.g. https://example.com/movie.mp4" required>
+      </div>
+
+      <!-- Series Fields -->
+      <div id="series_fields" style="display:none;">
+        <label class="block font-medium">📺 Title:</label>
+        <input type="text" name="series_title" class="w-full p-2 border rounded-lg" placeholder="e.g. Stranger Things" required>
+
+        <label class="block font-medium">🏆 Rating (0-10):</label>
+        <input type="number" name="series_rating" class="w-full p-2 border rounded-lg" placeholder="e.g. 8.7" min="0" max="10" step="0.1" required>
+
+        <label class="block font-medium">ℹ️ Plot:</label>
+        <textarea name="series_plot" class="w-full p-2 border rounded-lg" placeholder="Short description" rows="3" required></textarea>
+
+        <label class="block font-medium">⚙️ Genres (comma separated):</label>
+        <input type="text" name="series_genres" class="w-full p-2 border rounded-lg" placeholder="Drama, Fantasy, Horror">
+
+        <label class="block font-medium">📽️ Casts (comma separated):</label>
+        <input type="text" name="series_casts" class="w-full p-2 border rounded-lg" placeholder="Winona Ryder, David Harbour">
+
+        <label class="block font-medium">📽️ Directors (comma separated):</label>
+        <input type="text" name="series_directors" class="w-full p-2 border rounded-lg" placeholder="The Duffer Brothers">
+
+        <label class="block font-medium">🌐 Country:</label>
+        <input type="text" name="series_country" class="w-full p-2 border rounded-lg" placeholder="USA" required>
+
+        <label class="block font-medium">Poster URL:</label>
+        <input type="url" name="series_poster" class="w-full p-2 border rounded-lg" placeholder="https://example.com/poster.jpg" required>
+
+        <label class="block font-medium">Release Date:</label>
+        <input type="date" name="series_releaseDate" class="w-full p-2 border rounded-lg">
+
+        <label class="block font-medium">Number of Seasons:</label>
+        <input type="number" name="series_seasons" class="w-full p-2 border rounded-lg" min="1" required>
+
+        <label class="block font-medium">Status:</label>
+        <select name="series_status" class="w-full p-2 border rounded-lg">
+          <option value="Ongoing" selected>Ongoing</option>
+          <option value="Completed">Completed</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+
+        <hr class="my-6">
+
+        <h3 class="text-xl font-semibold mb-3">Episodes</h3>
+
+        <div id="episodesContainer" class="space-y-6">
+          <!-- Episode forms will be appended here -->
+        </div>
+
+        <button type="button" id="addEpisodeBtn" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+          + Add Episode
+        </button>
+      </div>
+
+      <!-- Encode Button -->
+      <div class="text-center pt-4">
+        <button type="submit" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600">
+          Add New
+        </button>
+      </div>
+
+  <!-- Footer -->
+  <div class="mt-8 text-center text-gray-500 dark:text-gray-400">
+    Made with 💗 using FFMPEG & PYTHON by <a href="https://majid.pro/" class="text-blue-600 underline">Majid Ansari</a>
+  </div>
+</div>
+
+<script>
+  const selectedMode = document.getElementById('selected_mode');
+  const movieFields = document.getElementById('movie_fields');
+  const seriesFields = document.getElementById('series_fields');
+  const episodesContainer = document.getElementById('episodesContainer');
+  const addEpisodeBtn = document.getElementById('addEpisodeBtn');
+
+function handleModeChange() {
+  if (selectedMode.value === '0') {
+    movieFields.style.display = 'block';
+    seriesFields.style.display = 'none';
+    mainForm.action = '/api/addmovie';
+
+    toggleFieldset(movieFields, true);
+    toggleFieldset(seriesFields, false);
+  } else {
+    movieFields.style.display = 'none';
+    seriesFields.style.display = 'block';
+    mainForm.action = '/api/addseries';
+
+    toggleFieldset(movieFields, false);
+    toggleFieldset(seriesFields, true);
+  }
+}
+
+// Enable/Disable all form controls in a section
+function toggleFieldset(container, enable) {
+  const elements = container.querySelectorAll('input, select, textarea');
+  elements.forEach(el => el.disabled = !enable);
+}
+
+
+  window.onload = handleModeChange;
+
+  let episodeCount = 0;
+
+  function createEpisodeForm(index) {
+    const episodeDiv = document.createElement('div');
+    episodeDiv.classList.add('border', 'p-4', 'rounded-lg', 'bg-gray-50');
+
+    episodeDiv.innerHTML = `
+      <h4 class="font-semibold mb-2">Episode ${index + 1}</h4>
+
+      <label class="block font-medium">Season Number *</label>
+      <input type="number" name="episodes[${index}][season]" class="w-full p-2 border rounded-lg mb-2" min="1" required>
+
+      <label class="block font-medium">Episode Number *</label>
+      <input type="number" name="episodes[${index}][episodeNumber]" class="w-full p-2 border rounded-lg mb-2" min="1" required>
+
+      <label class="block font-medium">Title *</label>
+      <input type="text" name="episodes[${index}][title]" class="w-full p-2 border rounded-lg mb-2" required>
+
+      <label class="block font-medium">Duration (minutes) *</label>
+      <input type="number" name="episodes[${index}][duration]" class="w-full p-2 border rounded-lg mb-2" min="1" required>
+
+      <label class="block font-medium">Air Date</label>
+      <input type="date" name="episodes[${index}][airDate]" class="w-full p-2 border rounded-lg mb-2">
+
+      <label class="block font-medium">Description</label>
+      <textarea name="episodes[${index}][description]" class="w-full p-2 border rounded-lg mb-2" rows="3"></textarea>
+
+      <label class="block font-medium">Episode Source URL *</label>
+      <input type="url" name="episodes[${index}][episode_src]" class="w-full p-2 border rounded-lg mb-2" required>
+
+      <button type="button" class="removeEpisodeBtn text-red-600 hover:text-red-800 font-semibold">Remove Episode</button>
+    `;
+
+    // Add event listener to remove button
+    episodeDiv.querySelector('.removeEpisodeBtn').addEventListener('click', () => {
+      episodesContainer.removeChild(episodeDiv);
+      refreshEpisodeIndexes();
+    });
+
+    return episodeDiv;
+  }
+
+  function refreshEpisodeIndexes() {
+    const episodeDivs = episodesContainer.children;
+    for(let i = 0; i < episodeDivs.length; i++) {
+      const div = episodeDivs[i];
+      div.querySelector('h4').textContent = `Episode ${i + 1}`;
+
+      // Update all input names with new indexes
+      const inputs = div.querySelectorAll('input, textarea');
+      inputs.forEach(input => {
+        const name = input.getAttribute('name');
+        const newName = name.replace(/episodes\[\d+\]/, `episodes[${i}]`);
+        input.setAttribute('name', newName);
+      });
+    }
+  }
+
+  addEpisodeBtn.addEventListener('click', () => {
+    const newEpisodeForm = createEpisodeForm(episodesContainer.children.length);
+    episodesContainer.appendChild(newEpisodeForm);
+  });
+
+</script>
+
+</body>
+</html>
