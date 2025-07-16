@@ -86,5 +86,5 @@ app.all('*',(req,res)=>{
         res.type('txt').send("404 not found")
     }
 })
-// listening port
-app.listen(3000);
+
+module.exports = app;
