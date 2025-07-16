@@ -1,9 +1,4 @@
 const mongoose = require('mongoose');
-require('dotenv').config();
-
-mongoose.connect(process.env.MONGO_DB_URL)
-.then(()=>console.log('Mongodb connected'))
-.catch((err)=>console.log('Error Occured:',err));
 
 const userschema = new mongoose.Schema({
     firstname: {
