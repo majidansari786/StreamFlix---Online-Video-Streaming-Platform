@@ -6,9 +6,9 @@ const user_file = require('../model/user_files');
 const User = require('../model/user')
 const dirPath = path.join(__dirname,'../','uploads');
 
-if(!fs.existsSync(dirPath)){
-    fs.mkdirSync(dirPath);
-};
+// if(!fs.existsSync(dirPath)){
+//     fs.mkdirSync(dirPath);
+// };
 
 async function filename_saving_in_db(filename,email) {
   const newdata = new user_file({

@@ -174,9 +174,9 @@ async function compress_video_encode(inputfile,output_name,res) {
 async function encode(req,res){
     const { output_name, selected_option } = req.body;
     const dirPath = path.join(__dirname, '../public/upload', output_name);
-    if(!fs.existsSync(dirPath)){
-      fs.mkdirSync(dirPath,{recursive: true});
-    }
+    // if(!fs.existsSync(dirPath)){
+    //   fs.mkdirSync(dirPath,{recursive: true});
+    // }
     const upload_folder = path.join(__dirname,'../public/upload');
     let safeOutputName = path.basename(output_name).replace(/[^a-zA-Z0-9_\-\.]/g, '');
     // if (!safeOutputName.endsWith('.mp4')) {
