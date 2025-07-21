@@ -35,6 +35,10 @@ const seriesSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    trailer: {
+        type: String,
+        default: null
+    },
     releaseDate: {
     type: Date,
     default: null
@@ -74,6 +78,11 @@ const seriesSchema = new mongoose.Schema({
         episode_src: {
             type: String,
             required: true
+        },
+
+        episode_thumbnail: {
+            type: String,
+            default: null
         }
     }],
     status: {

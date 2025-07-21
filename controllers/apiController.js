@@ -9,6 +9,8 @@ require('dotenv').config();
 const { exec } = require('child_process');
 const movieapi = require('../model/movie');
 const seriesapi = require('../model/seasons');
+const { default: mongoose } = require('mongoose');
+
 
 async function getMovie(req,res) {
   try {
@@ -17,6 +19,15 @@ async function getMovie(req,res) {
     } catch (err) {
         res.status(500).json({ error: 'Failed to fetch movies' });
     }
+}
+
+async function getseries(req,res) {
+  try{
+    const series = await seriesapi.find();
+    res.status(200).json(series)
+  }catch(error){
+    console.log('Failed to fetch series', error)
+  }
 }
 
 async function addnewmovie(req, res) {
@@ -32,7 +43,7 @@ async function addnewmovie(req, res) {
             directors: directors.split(',').map(name => name.trim()),
             country,
             poster,
-            movie_src
+            movie_src: req.file.path
         });
 
         await newMovie.save();
@@ -43,43 +54,85 @@ async function addnewmovie(req, res) {
     }
 }
 
+const commaSplit = val => val?.split(',').map(v => v.trim()).filter(Boolean) || [];
+
 const addnewseries = async (req, res) => {
   try {
     const {
-      series_title,
-      series_rating,
-      series_plot,
-      series_genres,
-      series_casts,
-      series_directors,
-      series_country,
-      series_poster,
-      series_releaseDate,
-      series_seasons,
-      series_status,
-      episodes
+      title,
+      rating,
+      plot,
+      genres,
+      casts,
+      directors,
+      country,
+      poster,
+      trailer,
+      releaseDate,
+      seasons,
+      status
     } = req.body;
 
+    // Parse genres, casts, and directors if they are comma-separated strings
+    const parsedGenres = Array.isArray(genres) ? genres : commaSplit(genres);
+    const parsedCasts = Array.isArray(casts) ? casts : commaSplit(casts);
+    const parsedDirectors = Array.isArray(directors) ? directors : commaSplit(directors);
+
+    // Parse episodes if submitted as HTML form (single episode)
+    let episodes = [];
+
+    if (req.body.episodes) {
+      // Handle single episode or multiple
+      const rawEpisodes = req.body.episodes;
+
+      if (Array.isArray(rawEpisodes)) {
+        episodes = rawEpisodes.map(e => ({
+          season: parseInt(e.season),
+          episodeNumber: parseInt(e.episodeNumber),
+          title: e.title,
+          duration: parseInt(e.duration),
+          airDate: e.airDate || null,
+          description: e.description || null,
+          episode_src: e.episode_src,
+          episode_thumbnail: e.episode_thumbnail
+        }));
+      } else {
+        // Single episode case
+        episodes.push({
+          season: parseInt(rawEpisodes.season),
+          episodeNumber: parseInt(rawEpisodes.episodeNumber),
+          title: rawEpisodes.title,
+          duration: parseInt(rawEpisodes.duration),
+          airDate: rawEpisodes.airDate || null,
+          description: rawEpisodes.description || null,
+          episode_src: rawEpisodes.episode_src,
+          episode_thumbnail: rawEpisodes.episode_thumbnail
+        });
+      }
+    }
+
     const newSeries = new seriesapi({
-      title: series_title,
-      rating: series_rating,
-      plot: series_plot,
-      genres: series_genres ? series_genres.split(',').map(g => g.trim()) : [],
-      casts: series_casts ? series_casts.split(',').map(c => c.trim()) : [],
-      directors: series_directors ? series_directors.split(',').map(d => d.trim()) : [],
-      country: series_country,
-      poster: series_poster,
-      releaseDate: series_releaseDate,
-      seasons: series_seasons,
-      episodes: episodes || [],
-      status: series_status
+      title,
+      rating,
+      plot,
+      genres: parsedGenres,
+      casts: parsedCasts,
+      directors: parsedDirectors,
+      country,
+      poster,
+      trailer,
+      releaseDate,
+      seasons,
+      status,
+      episodes
     });
 
-    await newSeries.save();
-    res.status(200).json({ message: 'Series added successfully' });
+    const saved = await newSeries.save();
+    res.status(201).json({ message: "Series added successfully", saved });
+
   } catch (err) {
-    console.error('Error adding series:', err);
-    res.status(500).json({ message: 'Error adding series', error: err.message });
+    console.error(err);
+    res.status(500).json({ error: "Server error", details: err.message });
   }
 };
 
@@ -87,19 +140,118 @@ async function getmoviebyId(req,res){
   try{
     const moviebyid = req.params.id;
     const movie = await movieapi.findOne({_id: moviebyid});
-    const similar = await movieapi.find({
+    if(!movie){
+      const seriesid = req.params.id;
+      const series = await seriesapi.findOne({_id: seriesid});
+      const similar = await seriesapi.find({
+        _id: { $ne: series._id },
+        genres: { $in: series.genres }
+      }).limit(8).lean();
+      res.render('series.ejs',{ series, similar});
+    }else{
+      const similar = await movieapi.find({
       _id: { $ne: movie._id },
       genres: { $in: movie.genres }
     }).limit(8).lean();
     res.render('movie.ejs', { movie, similar });
+    }
   }catch(error){
     console.log('An error Occured: ',error);
   }
+  }
+
+  async function getmoviebyIds(req,res){
+  try{
+    const moviebyid = req.params.id;
+    const movie = await movieapi.findOne({_id: moviebyid});
+    res.json(movie);
+  }catch(error){
+    console.log('An error Occured: ',error);
+  }
+}
+
+async function getseriesbyIds(req,res){
+  try{
+    const seriesbyid = req.params.id;
+    const series = await seriesapi.findOne({_id: seriesbyid});
+    res.json(series);
+  }catch(error){
+    console.log('An error Occured: ',error);
+  }
+}
+
+async function similar(req,res) {
+  try{
+    const moviebyid = req.params.id;
+    const movie = await movieapi.findOne({_id: moviebyid})
+    if(!movie){
+      const series = await seriesapi.findOne({_id: moviebyid})
+      const similar = await seriesapi.find({
+        _id: { $ne: series._id },
+        genres: { $in: series.genres } 
+      }); 
+      res.json(similar);
+    }else{
+      const similar = await movieapi.find({
+      _id: { $ne: movie._id },
+      genres: { $in: movie.genres } 
+    }); 
+    res.json(similar);
+    }
+  }catch(error){
+    console.log(error);
+  }
+};
+
+async function userfirstUpdate(req,res) {
+  const { firstname } = req.body;
+  const user_id = req.user.id;
+  if(!user_id){
+    return res.status(404).json({error:'user not found'})
+  }
+  try{
+    User.findOneAndUpdate(
+      { _id: user_id },
+      { firstname: firstname },
+      { new: true, runValidators: true })
+      .then(updatedUser => {
+        console.log(updatedUser);
+      })
+      res.status(202).json({success:'user updated!'})
+    }catch(error){
+      console.log(error);
+    }
+  }
+
+async function userlastnameUpdate(req,res) {
+  const { lastname } = req.body;
+  const user_id = req.user.id;
+  if(!user_id){
+    return res.status(404).json({error:'user not found'})
+  }
+  try{
+    User.findOneAndUpdate(
+      { _id: user_id },
+      { lastname: lastname },
+      { new: true, runValidators: true })
+      .then(updatedUser => {
+        console.log(updatedUser);
+      })
+      res.status(202).json({success:'user updated!'})
+    }catch(error){
+      console.log(error);
+    }
   }
 
 module.exports = {
     addnewmovie,
     addnewseries,
     getMovie,
-    getmoviebyId
+    getseries,
+    getmoviebyId,
+    getmoviebyIds,
+    getseriesbyIds,
+    similar,
+    userfirstUpdate,
+    userlastnameUpdate
 };

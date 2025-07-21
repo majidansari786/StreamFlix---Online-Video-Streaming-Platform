@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title><%= series.title %> — StreamFlix</title>
+  <style>
+    /* Reset & base */
+    body {
+      margin: 0;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+      color: #eee;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    a {
+      color: #e50914;
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    a:hover {
+      color: #f6121d;
+    }
+
+    /* Header with glassy effect */
+    .header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      backdrop-filter: saturate(180%) blur(12px);
+      background-color: rgba(20, 20, 20, 0.7);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 18px 60px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background-color 0.3s ease;
+    }
+
+    .header.scrolled {
+      background-color: rgba(20, 20, 20, 0.85);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #e50914;
+      user-select: none;
+      cursor: pointer;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links li a {
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 6px 0;
+      position: relative;
+    }
+
+    .nav-links li a::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: #e50914;
+      transition: width 0.3s ease;
+    }
+
+    .nav-links li a:hover::after {
+      width: 100%;
+    }
+
+    /* Hero Section */
+    .hero {
+      position: relative;
+      height: 65vh;
+      background: url('<%= series.backdrop || series.poster %>') center/cover no-repeat;
+      display: flex;
+      align-items: flex-end;
+      padding: 60px 80px;
+      overflow: hidden;
+    }
+
+    /* Glass panel */
+    .hero-content {
+      position: relative;
+      max-width: 720px;
+      backdrop-filter: saturate(180%) blur(20px);
+      background-color: rgba(20, 20, 20, 0.6);
+      border-radius: 12px;
+      padding: 32px 40px;
+      box-shadow: 0 0 30px rgba(229, 9, 20, 0.4);
+      color: #fff;
+      z-index: 10;
+      user-select: none;
+    }
+
+    /* Dark gradient overlay to dim hero bg */
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, #141414 40%, transparent 80%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .hero-content h1 {
+      font-size: 3.6rem;
+      font-weight: 900;
+      margin: 0 0 16px;
+      text-shadow: 0 0 10px rgba(229, 9, 20, 0.8);
+      line-height: 1.1;
+    }
+
+    .hero-content .meta {
+      font-size: 1.1rem;
+      color: #ccc;
+      margin-bottom: 28px;
+      letter-spacing: 0.02em;
+    }
+
+    /* Buttons with glassy style */
+    .hero-buttons {
+      display: flex;
+      gap: 20px;
+    }
+
+    .btn {
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 14px 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      user-select: none;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+
+    .btn-play {
+      background: #e50914;
+      color: white;
+      box-shadow: 0 0 15px rgba(229, 9, 20, 0.8);
+    }
+
+    .btn-play:hover {
+      background: #f6121d;
+      transform: scale(1.05);
+      box-shadow: 0 0 25px rgba(246, 18, 29, 1);
+    }
+
+    .btn-info {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      backdrop-filter: saturate(180%) blur(12px);
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-info:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: #e50914;
+      box-shadow: 0 0 15px rgba(229, 9, 20, 0.7);
+      transform: scale(1.05);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1200px;
+      margin: 60px auto 80px;
+      padding: 0 40px;
+    }
+
+    /* Overview section with glassy panel */
+    .overview {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      margin-bottom: 40px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border-radius: 12px;
+      padding: 24px 32px;
+      color: #ffffff;
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .section-title {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #e50914;
+      margin-bottom: 20px;
+      text-shadow: 0 0 8px rgba(229, 9, 20, 0.7);
+    }
+
+    /* Episodes Section - Netflix Style */
+    .episodes-section {
+      margin-bottom: 60px;
+    }
+
+    .season-selector {
+      margin-bottom: 30px;
+      position: relative;
+      display: inline-block;
+    }
+
+    .season-dropdown {
+      background: rgba(42, 42, 42, 0.9);
+      border: 1px solid #555;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 12px 40px 12px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      appearance: none;
+      min-width: 200px;
+      transition: all 0.3s ease;
+    }
+
+    .season-dropdown:hover {
+      background: rgba(60, 60, 60, 0.9);
+      border-color: #777;
+    }
+
+    .season-dropdown:focus {
+      outline: none;
+      border-color: #e50914;
+      box-shadow: 0 0 8px rgba(229, 9, 20, 0.5);
+    }
+
+    .season-selector::after {
+      content: '▼';
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: #ccc;
+      font-size: 0.8rem;
+    }
+
+    .episodes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .episode-card {
+      display: flex;
+      background: rgba(42, 42, 42, 0.7);
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .episode-card:hover {
+      background: rgba(58, 58, 58, 0.8);
+      transform: scale(1.02);
+    }
+
+    .episode-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 60px;
+      background: rgba(20, 20, 20, 0.8);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+
+    .episode-thumbnail {
+      width: 160px;
+      height: 90px;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .episode-thumbnail::after {
+      content: '▶';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 1.5rem;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      text-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+    }
+
+    .episode-card:hover .episode-thumbnail::after {
+      opacity: 1;
+    }
+
+    .episode-info {
+      flex: 1;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .episode-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .episode-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      margin: 0;
+    }
+
+    .episode-duration {
+      color: #999;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .episode-description {
+      color: #ccc;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      margin: 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Similar series row */
+    .row {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding-bottom: 24px;
+      scroll-behavior: smooth;
+    }
+
+    .row::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .row::-webkit-scrollbar-thumb {
+      background: #e50914;
+      border-radius: 4px;
+    }
+
+    /* Mini cards with glass effect */
+    .mini-card-wrapper {
+      width: 240px;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: transform 0.2s;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .mini-card-wrapper:hover {
+      transform: scale(1.05);
+    }
+
+    .mini-card {
+      width: 100%;
+      height: 135px;
+      border-radius: 8px;
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    }
+
+    .mini-card-details {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      padding: 12px;
+      color: #111;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      max-height: 120px;
+      overflow: auto;
+    }
+
+    .mini-card-details .title {
+      font-weight: bold;
+      margin-bottom: 6px;
+      color: #ffffff;
+    }
+
+    .mini-card-details .plot {
+      color: #ffffff;
+    }
+
+    /* Video Player Modal */
+    .video-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.95);
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .video-modal.active {
+      display: flex;
+    }
+
+    .video-container {
+      position: relative;
+      width: 90%;
+      max-width: 960px;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(229, 9, 20, 0.8);
+    }
+
+    video {
+      width: 100%;
+      height: auto;
+      background-color: black;
+      display: block;
+    }
+
+    .close-player {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(229, 9, 20, 0.9);
+      border: none;
+      color: white;
+      font-size: 28px;
+      font-weight: 900;
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      user-select: none;
+      z-index: 10;
+      box-shadow: 0 0 12px rgba(229, 9, 20, 0.8);
+    }
+
+    .close-player:hover {
+      background-color: #f6121d;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero-content h1 {
+        font-size: 2.4rem;
+      }
+
+      .btn {
+        font-size: 0.95rem;
+        padding: 12px 24px;
+      }
+
+      .container {
+        padding: 0 20px;
+        margin-top: 40px;
+        margin-bottom: 40px;
+      }
+
+      .episode-card {
+        flex-direction: column;
+      }
+
+      .episode-number {
+        min-width: unset;
+        padding: 12px;
+        text-align: center;
+      }
+
+      .episode-thumbnail {
+        width: 100%;
+        height: 200px;
+      }
+
+      .mini-card {
+        width: 160px;
+        height: 90px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header" id="header">
+    <a href="/" class="logo">StreamFlix</a>
+    <ul class="nav-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="#series">Series</a></li>
+      <li><a href="#series">TV Shows</a></li>
+      <li><a href="#my-list">My List</a></li>
+    </ul>
+  </header>
+
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="hero-content">
+      <h1><%= series.title %></h1>
+      <p class="meta">
+        <%= series.year %> • <%= series.genres.join(', ') %> • ⭐ <%= series.rating %>/10 • <%= series.duration || 'N/A' %> min
+      </p>
+      <div class="hero-buttons">
+        <button class="btn btn-play" onclick="openPlayer()">▶ Play</button>
+        <button class="btn btn-info" onclick="document.getElementById('info').scrollIntoView({ behavior: 'smooth' })">ℹ More Info</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Series Info -->
+  <main class="container">
+    <section id="info" class="overview">
+      <h2 class="section-title">Overview</h2>
+      <p><%= series.plot %></p>
+      <% if (series.casts && series.casts.length) { %>
+        <p><strong>Cast:</strong> <%= series.casts.join(', ') %></p>
+      <% } %>
+      <% if (series.directors && series.directors.length) { %>
+        <p><strong>Director:</strong> <%= series.directors.join(', ') %></p>
+      <% } %>
+      <% if (series.country) { %>
+        <p><strong>Country:</strong> <%= series.country %></p>
+      <% } %>
+    </section>
+
+    <!-- Episodes Section -->
+    <% if (series.episodes && series.episodes.length) { %>
+      <section class="episodes-section">
+        <h2 class="section-title">Episodes</h2>
+        
+        <div class="season-selector">
+          <select class="season-dropdown" id="season-select" onchange="changeSeason()">
+            <% for(let i = 1; i <= series.seasons; i++) { %>
+              <option value="<%= i %>">Season <%= i %></option>
+            <% } %>
+          </select>
+        </div>
+
+        <div class="episodes-list" id="episodes-container">
+          <!-- Episodes will be populated by JavaScript -->
+        </div>
+      </section>
+    <% } %>
+
+    <!-- Similar Series Section -->
+    <% if (similar && similar.length) { %>
+      <section>
+        <h2 class="section-title">More Like This</h2>
+        <div class="row">
+          <% similar.forEach(m => { %>
+            <div class="mini-card-wrapper" onclick="window.location.href='/title/<%= m._id %>'">
+                <div class="mini-card" style="background-image: url('<%= m.poster %>');"></div>
+                <div class="mini-card-details">
+                    <div class="title"><%= m.title %></div>
+                    <div class="plot"><%= m.plot %></div>
+                </div>
+            </div>
+          <% }) %>
+        </div>
+      </section>
+    <% } %>
+  </main>
+
+  <!-- Video Player Modal -->
+  <div id="video-player" class="video-modal">
+    <div class="video-container">
+      <button class="close-player" onclick="closePlayer()">✖</button>
+      <video controls autoplay id="series-video">
+        <source src="<%= series.trailer %>" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+    </div>
+  </div>
+
+  <script>
+    // Series data from your MongoDB model
+    const seriesData = {
+      totalSeasons: <%= series.seasons %>,
+      episodes: <%- JSON.stringify(series.episodes) %>
+    };
+
+    function loadEpisodes(seasonNumber) {
+      const container = document.getElementById('episodes-container');
+      const seasonEpisodes = seriesData.episodes.filter(ep => ep.season === seasonNumber);
+      
+      container.innerHTML = '';
+      
+      // Sort episodes by episode number
+      seasonEpisodes.sort((a, b) => a.episodeNumber - b.episodeNumber);
+      
+      seasonEpisodes.forEach(episode => {
+        const episodeCard = document.createElement('div');
+        episodeCard.className = 'episode-card';
+        episodeCard.onclick = () => playEpisode(episode.episode_src);
+        
+        // Format duration (convert minutes to "XXm" format)
+        const durationFormatted = episode.duration ? `${episode.duration}m` : 'N/A';
+        
+        // Default thumbnail if not provided
+        const thumbnail = episode.episode_thumbnail || 'https://images.unsplash.com/photo-1489599828517-b0f8d5c78ef9?w=400&h=225&fit=crop&crop=faces';
+        
+        // Default description if not provided
+        const description = episode.description || 'No description available for this episode.';
+        
+        episodeCard.innerHTML = `
+          <div class="episode-number">${episode.episodeNumber}</div>
+          <div class="episode-thumbnail" style="background-image: url('${thumbnail}')"></div>
+          <div class="episode-info">
+            <div class="episode-header">
+              <h3 class="episode-title">${episode.title}</h3>
+              <span class="episode-duration">${durationFormatted}</span>
+            </div>
+            <p class="episode-description">${description}</p>
+          </div>
+        `;
+        
+        container.appendChild(episodeCard);
+      });
+      
+      // Show message if no episodes found for this season
+      if (seasonEpisodes.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #999;">No episodes available for this season.</div>';
+      }
+    }
+
+    function changeSeason() {
+      const select = document.getElementById('season-select');
+      const seasonNumber = parseInt(select.value);
+      loadEpisodes(seasonNumber);
+    }
+
+    function playEpisode(videoSrc) {
+      const video = document.getElementById('series-video');
+      const source = video.querySelector('source');
+      source.src = videoSrc;
+      video.load();
+      openPlayer();
+    }
+
+    function openPlayer() {
+      document.getElementById('video-player').classList.add('active');
+      document.getElementById('series-video').play();
+    }
+
+    function closePlayer() {
+      const modal = document.getElementById('video-player');
+      const video = document.getElementById('series-video');
+      video.pause();
+      modal.classList.remove('active');
+    }
+
+    // Initialize with first season
+    document.addEventListener('DOMContentLoaded', () => {
+      if (seriesData.episodes && seriesData.episodes.length > 0) {
+        loadEpisodes(1); // Load season 1 by default
+      }
+    });
+
+    // Optional: close player with Esc key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closePlayer();
+    });
+
+    // Header background change on scroll
+    window.addEventListener('scroll', () => {
+      const header = document.getElementById('header');
+      if (window.scrollY > 50) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -14,21 +14,33 @@ app.use(session({
   resave: false,
   saveUninitialized: false
 }));
-app.use(cookieParser());
 
+const port = process.env.PORT
 const cors = require('cors');
+app.use(cookieParser());
 const { text } = require('body-parser');
-const Corsoption = require('./config/Corsption')
+// const Corsoption = require('./config/Corsption')
+
+const whitelist = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+const corsOptions = {
+  origin: whitelist,
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 
 //Cross origin sharing
-app.use(cors(Corsoption));
+// app.use(cors(Corsoption));
 
 // middleware for handling urlencoded and json data
-app.use(express.urlencoded({extended: false}));
+app.use(express.urlencoded({ extended: true }));
+
 app.use(express.json());
 
 // middleware for serve static files
-app.use(express.static(path.join(__dirname,'./static')));
+app.use(express.static('./public'))
 
 // custom middleware for logging
 const logs = require('./middleware/logs.js');
@@ -43,6 +55,10 @@ const authentication = require('./middleware/auth.js')
 
 // middleware for uploading using multer
 const upload = require('./middleware/upload.js')
+
+// middleware for checking role
+const checkRole = require('./middleware/checkRole.js')
+
 
 //custom route from user
 const userroutes = require('./routers/user/routes.js');
@@ -71,11 +87,15 @@ app.post('/',async (req,res)=>{
     res.status(201).json({message:'User created!'})
 })
 
-app.get('/dashboard',authentication,(req,res)=>{
-  res.render('dashboard.ejs', {user: req.session.user})
+app.get('/addseries',authentication,checkRole(['admin']), (req,res)=>{
+  res.render('addseries.ejs', {user: req.session.user})
 })
 
-const apiController = require('./controllers/apiController.js')
+app.get('/addmovie',authentication,checkRole(['admin']), (req,res)=>{
+  res.render('addmovie.ejs', {user: req.session.user})
+})
+
+const apiController = require('./controllers/apiController.js');
 app.get('/title/:id',apiController.getmoviebyId);
 
 app.all('*',(req,res)=>{
@@ -89,4 +109,4 @@ app.all('*',(req,res)=>{
     }
 })
 
-module.exports = app;
+app.listen(port,()=> console.log(`Server running at port ${port}`))
