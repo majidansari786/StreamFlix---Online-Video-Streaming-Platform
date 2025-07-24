@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>All series</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #141414;
+      color: #fff;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+
+    header {
+      padding: 20px;
+      font-size: 2rem;
+      background-color: #000;
+      text-align: center;
+      border-bottom: 1px solid #333;
+    }
+
+    .series-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+      padding: 40px;
+    }
+
+    .series-card {
+      background-color: #222;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0,0,0,0.7);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s ease;
+    }
+
+    .series-card:hover {
+      transform: scale(1.03);
+    }
+
+    .series-thumb {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+    }
+
+    .series-details {
+      padding: 15px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .series-title {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+    }
+
+    .edit-button {
+      margin-top: auto;
+      padding: 10px;
+      background-color: #e50914;
+      color: #fff;
+      border: none;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .edit-button:hover {
+      background-color: #f40612;
+    }
+  </style>
+</head>
+<body>
+
+  <header>Admin - Series List</header>
+
+  <div class="series-list" id="seriesList">
+    <!-- series will be injected here -->
+  </div>
+
+  <script>
+    async function fetchseries() {
+      try {
+        const response = await fetch('/api/series');
+        const series = await response.json();
+        const container = document.getElementById('seriesList');
+        container.innerHTML = '';
+
+        series.forEach(series => {
+          const seriesCard = document.createElement('div');
+          seriesCard.classList.add('series-card');
+
+          seriesCard.innerHTML = `
+            <img src="${series.poster || 'https://via.placeholder.com/200x300?text=No+Image'}" class="series-thumb" alt="${series.title}" />
+            <div class="series-details">
+              <div class="series-title">${series.title}</div>
+              <a class="edit-button" href="/stream-admin/edit/series/${series._id}">Edit</a>
+            </div>
+          `;
+
+          container.appendChild(seriesCard);
+        });
+      } catch (error) {
+        console.error('Failed to fetch series:', error);
+        document.getElementById('seriesList').innerHTML = '<p style="color: red;">Failed to load series.</p>';
+      }
+    }
+
+    fetchseries();
+  </script>
+
+</body>
+</html>
