@@ -10,6 +10,9 @@ const { exec } = require("child_process");
 const movieapi = require("../model/movie");
 const seriesapi = require("../model/seasons");
 const { default: mongoose } = require("mongoose");
+const otpgen = require("otp-generator");
+const nodemailer = require("nodemailer");
+const otpModel = require("../model/otp");
 
 async function getMovie(req, res) {
   try {
@@ -52,7 +55,7 @@ async function addnewmovie(req, res) {
       directors: directors.split(",").map((name) => name.trim()),
       country,
       poster,
-      movie_src: req.file.path,
+      movie_src,
     });
 
     await newMovie.save();
@@ -263,45 +266,128 @@ async function userlastnameUpdate(req, res) {
   }
 }
 
-async function movieUpdateAll(req,res) {
+async function movieUpdateAll(req, res) {
   const id = req.params.id;
-  const {
-    title,
-    rating,
-    plot,
-    duration,
-    country,
-    poster,
-    movie_src
-  } = req.body;
+  const { title, rating, plot, duration, country, poster, movie_src } =
+    req.body;
   const updateFields = {};
-  if(title) updateFields.title = title;
+  if (title) updateFields.title = title;
   if (rating) updateFields.rating = rating;
   if (plot) updateFields.plot = plot;
   if (duration) updateFields.duration = duration;
   if (country) updateFields.country = country;
   if (poster) updateFields.poster = poster;
   if (movie_src) updateFields.movie_src = movie_src;
-  if(Object.keys(updateFields).length == 0){
-    return res.status(400).json({ error: 'No valid field provided for update'})
+  if (Object.keys(updateFields).length == 0) {
+    return res
+      .status(400)
+      .json({ error: "No valid field provided for update" });
   }
 
-  try{
+  try {
     const updatedmovie = await movieapi.findOneAndUpdate(
-      {_id: id},
-      {...updateFields},
+      { _id: id },
+      { ...updateFields },
       { new: true, runValidators: true }
     );
-     if (!updatedmovie) {
+    if (!updatedmovie) {
       return res.status(404).json({ error: "Movie not found." });
     }
     console.log(updatedmovie);
-    res.status(200).json({ success: "Movie updated successfully.", updatedmovie });
-  }catch(error){
+    res
+      .status(200)
+      .json({ success: "Movie updated successfully.", updatedmovie });
+  } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal server error." });
   }
+}
 
+async function seriesUpdateAll(req, res) {
+  const id = req.params.id;
+  const { title, rating, plot, duration, country, poster, movie_src } =
+    req.body;
+  const updateFields = {};
+  if (title) updateFields.title = title;
+  if (rating) updateFields.rating = rating;
+  if (plot) updateFields.plot = plot;
+  if (duration) updateFields.duration = duration;
+  if (country) updateFields.country = country;
+  if (poster) updateFields.poster = poster;
+  if (movie_src) updateFields.movie_src = movie_src;
+  if (Object.keys(updateFields).length == 0) {
+    return res
+      .status(400)
+      .json({ error: "No valid field provided for update" });
+  }
+
+  try {
+    const updatedmovie = await movieapi.findOneAndUpdate(
+      { _id: id },
+      { ...updateFields },
+      { new: true, runValidators: true }
+    );
+    if (!updatedmovie) {
+      return res.status(404).json({ error: "Movie not found." });
+    }
+    console.log(updatedmovie);
+    res
+      .status(200)
+      .json({ success: "Movie updated successfully.", updatedmovie });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+}
+
+async function otpGenerator(req, res) {
+  const { email } = req.body;
+  const otp = otpgen.generate(6, {
+    digits: true,
+    alphabets: false,
+    upperCase: false,
+    specialChars: false,
+  });
+  try {
+    await otpModel.create({ email, otp });
+    const transport = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.GPASS,
+      },
+    });
+    await transport.sendMail({
+      from: process.env.EMAIL,
+      to: email,
+      subject: "OTP VERIFICATION",
+      text: `Your OTP for verification is: ${otp}`,
+    });
+    res.status(200).json({ success: "otp sent successfully" });
+  } catch (err) {
+    res.status(400).json({ error: `${err}` });
+  }
+}
+
+async function otpVerify(req, res) {
+  const { email, otp } = req.body;
+  try {
+    const verifying = await otpModel.findOne({ email, otp }).exec();
+    if (verifying) {
+      User.findOneAndUpdate(
+        { email: email },
+        { verified: true },
+        { new: true, runValidators: true }
+      ).then((updatedUser) => {
+        console.log(updatedUser);
+      });
+      res.status(200).json({ success: "verification complete" });
+    } else {
+      res.status(401).json({ error: "otp not matched" });
+    }
+  } catch (err) {
+    res.status(401).json({ error: `${err}` });
+  }
 }
 
 module.exports = {
@@ -315,5 +401,8 @@ module.exports = {
   similar,
   userfirstUpdate,
   userlastnameUpdate,
-  movieUpdateAll
+  movieUpdateAll,
+  seriesUpdateAll,
+  otpGenerator,
+  otpVerify,
 };
