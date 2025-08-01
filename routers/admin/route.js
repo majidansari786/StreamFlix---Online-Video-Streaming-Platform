@@ -16,6 +16,15 @@ router.get(
   }
 );
 
+router.get(
+  "/edit/series/:id",
+  authentication,
+  checkRole(["admin"]),
+  (req, res) => {
+    res.render("editseries.ejs");
+  }
+);
+
 router.get("/allmovies", authentication, checkRole(["admin"]), (req, res) => {
   res.render("movielist.ejs");
 });

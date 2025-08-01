@@ -12,7 +12,7 @@ connectdb();
 app.use(
   session({
     secret:
-      "70a544710d30796e2e47f9da7893c848241c1e15f266a15ea0af07e4d8eefd322e289574d3019a945f4598bbc40b756b4ce977f126ed2d95041524d95d35032d",
+      process.env.SECRET,
     resave: false,
     saveUninitialized: false,
   })

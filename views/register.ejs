@@ -8,21 +8,281 @@
     <title>Sign up</title>
 </head>
 <body class="min-h-screen flex items-center justify-center bg-gray-950 text-white font-sans">
-     <div class="space-y-4">
-    <div class=" max-w-md p-8 rounded-2xl shadow-xl space-y-6 border-2 mt-3 border-gray-700 items-center flex">
-        <form action="/user/signup" method="post">
-        <h1 class="text-center text-2xl p-2 font-bold">Sign up</h1>
-        <label for="first_name">First name: </label><br>
-        <input class="border-2 border-blue-400 mt-2 p-1 placeholder:text-gray-500 bg-gray-800 rounded-lg hover:border-blue-800" type="text" name="first_name" id="first_name" placeholder="john"><br>
-        <label for="last_name">last name: </label><br>
-        <input class="border-2 border-blue-400 mt-2 p-1 bg-gray-800 rounded-lg hover:border-blue-800" type="text" name="last_name" id="last_name"><br>
-        <label for="email">Email:</label><br>
-        <input class="border-2 border-blue-400 mt-2 p-1 bg-gray-800 rounded-lg hover:border-blue-800" type="email" name="email" id="email"><br>
-        <label for="password">Password:</label><br>
-        <input class="border-2 border-blue-400 mt-2 p-1 bg-gray-800 rounded-lg hover:border-blue-800" type="password" name="password" id="password"><br>
-        <button type="submit" class="border-2 border-blue-400 mt-2 p-1 rounded-lg hover:hover:bg-blue-600 transition hover:scale-110 w-full">Sign Up</button>
-    </form>
+    <div class="space-y-4">
+        <!-- Step 1: Sign Up Form -->
+        <div id="signupForm" class="max-w-md p-8 rounded-2xl shadow-xl space-y-6 border-2 mt-3 border-gray-700">
+            <h1 class="text-center text-2xl p-2 font-bold">Sign up</h1>
+            <form id="userSignupForm">
+                <label for="first_name">First name:</label><br>
+                <input class="border-2 border-blue-400 mt-2 p-1 placeholder:text-gray-500 bg-gray-800 rounded-lg hover:border-blue-800 w-full" 
+                       type="text" name="first_name" id="first_name" placeholder="john" required><br><br>
+                
+                <label for="last_name">Last name:</label><br>
+                <input class="border-2 border-blue-400 mt-2 p-1 bg-gray-800 rounded-lg hover:border-blue-800 w-full" 
+                       type="text" name="last_name" id="last_name" required><br><br>
+                
+                <label for="email">Email:</label><br>
+                <input class="border-2 border-blue-400 mt-2 p-1 bg-gray-800 rounded-lg hover:border-blue-800 w-full" 
+                       type="email" name="email" id="email" required><br><br>
+                
+                <label for="password">Password:</label><br>
+                <input class="border-2 border-blue-400 mt-2 p-1 bg-gray-800 rounded-lg hover:border-blue-800 w-full" 
+                       type="password" name="password" id="password" required><br><br>
+                
+                <button type="submit" class="border-2 border-blue-400 mt-2 p-2 rounded-lg hover:bg-blue-600 transition hover:scale-110 w-full">
+                    Generate OTP
+                </button>
+            </form>
+        </div>
+
+        <!-- Step 2: OTP Verification Form (Initially Hidden) -->
+        <div id="otpForm" class="max-w-md p-8 rounded-2xl shadow-xl space-y-6 border-2 mt-3 border-gray-700 hidden">
+            <h1 class="text-center text-2xl p-2 font-bold">Verify OTP</h1>
+            <p class="text-center text-gray-300 text-sm">
+                We've sent a verification code to <span id="emailDisplay" class="text-blue-400"></span>
+            </p>
+            
+            <form id="otpVerifyForm">
+                <label for="otp">Enter OTP:</label><br>
+                <input class="border-2 border-blue-400 mt-2 p-3 bg-gray-800 text-white rounded-lg hover:border-blue-800 focus:border-blue-300 focus:outline-none w-full text-center text-lg tracking-widest" 
+                       type="text" name="otp" id="otp" placeholder="l2bgVf" maxlength="6" required autocomplete="off"><br><br>
+                
+                <button type="submit" class="border-2 border-green-400 mt-2 p-2 rounded-lg hover:bg-green-600 transition hover:scale-110 w-full">
+                    Verify & Sign Up
+                </button>
+                
+                <button type="button" id="resendOtp" class="border-2 border-gray-400 mt-2 p-2 rounded-lg hover:bg-gray-600 transition hover:scale-110 w-full">
+                    Resend OTP
+                </button>
+                
+                <button type="button" id="backToSignup" class="text-blue-400 hover:text-blue-300 mt-2 w-full text-center block">
+                    ← Back to Sign Up
+                </button>
+            </form>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="max-w-md p-8 rounded-2xl shadow-xl space-y-6 border-2 mt-3 border-gray-700 hidden">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto"></div>
+                <p class="mt-4 text-gray-300">Processing...</p>
+            </div>
+        </div>
+
+        <!-- Success State -->
+        <div id="successState" class="max-w-md p-8 rounded-2xl shadow-xl space-y-6 border-2 mt-3 border-green-700 hidden">
+            <div class="text-center">
+                <div class="text-green-400 text-4xl mb-4">✓</div>
+                <h2 class="text-xl font-bold text-green-400">Account Created Successfully!</h2>
+                <p class="text-gray-300 mt-2">Welcome to our platform. You can now log in.</p>
+            </div>
+        </div>
     </div>
-    </div>
+
+    <script>
+        let userData = {};
+
+        // Step 1: Handle signup form submission
+        document.getElementById('userSignupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Collect form data
+            userData = {
+                first_name: document.getElementById('first_name').value,
+                last_name: document.getElementById('last_name').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value
+            };
+
+            showLoading();
+
+            try {
+                // First create the user account
+                const signupResponse = await fetch('/user/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                const signupResult = await signupResponse.json();
+
+                if (signupResponse.ok) {
+                    // User created successfully, now generate OTP
+                    const otpResponse = await fetch('/api/otpgenerate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ email: userData.email })
+                    });
+
+                    const otpResult = await otpResponse.json();
+
+                    if (otpResponse.ok || otpResponse.status === 500) { // Handle your current 500 success response
+                        // Show OTP form
+                        document.getElementById('emailDisplay').textContent = userData.email;
+                        showOtpForm();
+                    } else {
+                        alert('Error generating OTP: ' + (otpResult.error || otpResult.message || 'Unknown error'));
+                        showSignupForm();
+                    }
+                } else {
+                    alert('Error creating account: ' + (signupResult.error || signupResult.message || 'Unknown error'));
+                    showSignupForm();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Network error. Please try again.');
+                showSignupForm();
+            }
+        });
+
+        // Step 2: Handle OTP verification
+        document.getElementById('otpVerifyForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const otp = document.getElementById('otp').value;
+            
+            if (otp.length !== 6) {
+                alert('Please enter a valid 6-digit OTP');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                // Verify OTP (user already created, just updating verification status)
+                const response = await fetch('/api/otpverify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: userData.email,
+                        otp: otp
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showSuccess();
+                } else {
+                    alert('Error verifying OTP: ' + (result.error || result.message || 'Invalid OTP'));
+                    showOtpForm();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Network error. Please try again.');
+                showOtpForm();
+            }
+        });
+
+        // Handle resend OTP
+        document.getElementById('resendOtp').addEventListener('click', async function() {
+            showLoading();
+
+            try {
+                const response = await fetch('/api/otpgenerate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData) // Send all user data for resend too
+                });
+
+                const result = await response.json();
+
+                if (response.ok || response.status === 500) { // Handle your current 500 success response
+                    alert('OTP resent to your email');
+                    showOtpForm();
+                } else {
+                    alert('Error resending OTP: ' + (result.error || result.message || 'Unknown error'));
+                    showOtpForm();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Network error. Please try again.');
+                showOtpForm();
+            }
+        });
+
+        // Handle back button
+        document.getElementById('backToSignup').addEventListener('click', function() {
+            showSignupForm();
+        });
+
+        // UI state management functions
+        function showSignupForm() {
+            document.getElementById('signupForm').classList.remove('hidden');
+            document.getElementById('otpForm').classList.add('hidden');
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('successState').classList.add('hidden');
+        }
+
+        function showOtpForm() {
+            document.getElementById('signupForm').classList.add('hidden');
+            document.getElementById('otpForm').classList.remove('hidden');
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('successState').classList.add('hidden');
+            
+            // Focus on OTP input with a small delay to ensure it's visible
+            setTimeout(() => {
+                const otpInput = document.getElementById('otp');
+                otpInput.focus();
+                otpInput.value = ''; // Clear any previous value
+            }, 100);
+        }
+
+        function showLoading() {
+            document.getElementById('signupForm').classList.add('hidden');
+            document.getElementById('otpForm').classList.add('hidden');
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('successState').classList.add('hidden');
+        }
+
+        function showSuccess() {
+            document.getElementById('signupForm').classList.add('hidden');
+            document.getElementById('otpForm').classList.add('hidden');
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('successState').classList.remove('hidden');
+        }
+
+        // Auto-format OTP input - allow letters and numbers
+        document.getElementById('otp').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/[^a-zA-Z0-9]/g, ''); // Remove non-alphanumeric characters
+            if (value.length > 6) value = value.slice(0, 6);
+            e.target.value = value;
+        });
+
+        // Allow alphanumeric input for OTP
+        document.getElementById('otp').addEventListener('keydown', function(e) {
+            // Allow: backspace, delete, tab, escape, enter
+            if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
+                // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                (e.keyCode === 65 && e.ctrlKey === true) ||
+                (e.keyCode === 67 && e.ctrlKey === true) ||
+                (e.keyCode === 86 && e.ctrlKey === true) ||
+                (e.keyCode === 88 && e.ctrlKey === true)) {
+                return;
+            }
+            // Allow numbers (48-57), letters (65-90), and numpad numbers (96-105)
+            if (!((e.keyCode >= 48 && e.keyCode <= 57) || 
+                  (e.keyCode >= 65 && e.keyCode <= 90) || 
+                  (e.keyCode >= 96 && e.keyCode <= 105))) {
+                e.preventDefault();
+            }
+        });
+
+        // Handle paste events - allow alphanumeric
+        document.getElementById('otp').addEventListener('paste', function(e) {
+            e.preventDefault();
+            let paste = (e.clipboardData || window.clipboardData).getData('text');
+            let value = paste.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6);
+            this.value = value;
+        });
+    </script>
 </body>
 </html>

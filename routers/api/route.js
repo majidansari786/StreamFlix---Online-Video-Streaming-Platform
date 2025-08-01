@@ -57,6 +57,9 @@ router.post(
 
 router.post("/login", userController.handleUserLogin);
 router.post("/update/movie/:id", videosController.movieUpdateAll);
+router.post("/update/series/:id", videosController.seriesUpdateAll);
+router.post('/otpgenerate', videosController.otpGenerator);
+router.post('/otpverify', videosController.otpVerify);
 
 router.get("/similar/:id", videosController.similar);
 router.get("/watchlist/:email", userController.listpage);
