@@ -24,7 +24,7 @@ app.use(cookieParser());
 const { text } = require("body-parser");
 // const Corsoption = require('./config/Corsption')
 
-const whitelist = ["http://localhost:3000", "http://127.0.0.1:3000"];
+const whitelist = ["*"];
 const corsOptions = {
   origin: whitelist,
   methods: ["GET", "POST"],
