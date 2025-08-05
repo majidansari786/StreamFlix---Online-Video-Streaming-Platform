@@ -7,6 +7,8 @@ const apicontroller = require("../../controllers/apiController");
 const checkRole = require("../../middleware/checkRole");
 const auth = require("../../middleware/auth");
 const upload = require("../../middleware/upload");
+const HighrateLimiter = require("../../middleware/Highratelimit");
+const LowrateLimiter = require("../../middleware/LowrateLimiter");
 
 app = express();
 app.use(express.json());
@@ -15,21 +17,21 @@ app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "../../views"));
 
-router.get("/", usercontroller.getuser);
+router.get("/", HighrateLimiter, usercontroller.getuser);
 
 router.get("/about", (req, res) => {
   res.render("about.ejs");
 });
 
-router.get("/login", (req, res) => {
+router.get("/login", HighrateLimiter, (req, res) => {
   res.render("login.ejs");
 });
 
-router.get("/logout", usercontroller.logout);
+router.get("/logout", HighrateLimiter, usercontroller.logout);
 
-router.post("/login", usercontroller.handleUserLogin);
+router.post("/login", LowrateLimiter, usercontroller.handleUserLogin);
 
-router.post("/signup", usercontroller.handleUserSignup);
+router.post("/signup", LowrateLimiter, usercontroller.handleUserSignup);
 
 router.get("/signup", (req, res) => {
   res.render("register.ejs");
@@ -56,7 +58,17 @@ router.post(
   upload.single("file"),
   usercontroller.handleUpload
 );
-router.post("/firstnameupdate", auth, apicontroller.userfirstUpdate);
-router.post("/lastnameupdate", auth, apicontroller.userlastnameUpdate);
+router.post(
+  "/firstnameupdate",
+  HighrateLimiter,
+  auth,
+  apicontroller.userfirstUpdate
+);
+router.post(
+  "/lastnameupdate",
+  HighrateLimiter,
+  auth,
+  apicontroller.userlastnameUpdate
+);
 
 module.exports = router;

@@ -10,6 +10,8 @@ const auth = require("../../middleware/auth");
 const multer = require("multer");
 const { use } = require("passport");
 const cookieParser = require("cookie-parser");
+const HighrateLimiter = require('../../middleware/Highratelimit');
+const LowrateLimiter = require('../../middleware/LowrateLimiter');
 
 // Set up storage
 const storage = multer.diskStorage({
@@ -50,23 +52,23 @@ router.post(
 );
 router.post(
   "/watchlist",
-  auth,
+  auth, HighrateLimiter,
   checkRole(["user", "admin"]),
   userController.userwatchlist
 );
 
-router.post("/login", userController.handleUserLogin);
+router.post("/login", LowrateLimiter, userController.handleUserLogin);
 router.post("/update/movie/:id", videosController.movieUpdateAll);
 router.post("/update/series/:id", videosController.seriesUpdateAll);
-router.post('/otpgenerate', videosController.otpGenerator);
-router.post('/otpverify', videosController.otpVerify);
+router.post('/otpgenerate', LowrateLimiter, videosController.otpGenerator);
+router.post('/otpverify', LowrateLimiter, videosController.otpVerify);
 
-router.get("/similar/:id", videosController.similar);
-router.get("/watchlist/:email", userController.listpage);
-router.get("/movies", videosController.getMovie);
-router.get("/series", videosController.getseries);
-router.get("/movies/:id", videosController.getmoviebyIds);
-router.get("/series/:id", videosController.getseriesbyIds);
+router.get("/similar/:id", HighrateLimiter, videosController.similar);
+router.get("/watchlist/:email",HighrateLimiter, userController.listpage);
+router.get("/movies", HighrateLimiter, videosController.getMovie);
+router.get("/series", HighrateLimiter, videosController.getseries);
+router.get("/movies/:id", HighrateLimiter, videosController.getmoviebyIds);
+router.get("/series/:id", HighrateLimiter, videosController.getseriesbyIds);
 router.get(
   "/profile",
   auth,
