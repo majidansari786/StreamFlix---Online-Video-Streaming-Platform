@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
 const connectdb = require("./config/db.js");
+const helmet = require('helmet')
 
 const app = express();
 connectdb();
@@ -24,13 +25,21 @@ app.use(cookieParser());
 const { text } = require("body-parser");
 // const Corsoption = require('./config/Corsption')
 
-const whitelist = ["*"];
+const whitelist = ["https://streamflix-frontend-beta.vercel.app"];
+
 const corsOptions = {
-  origin: whitelist,
+  origin: function (origin, callback) {
+    if (!origin || whitelist.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
+  credentials: true, // Only works if origin is specific
 };
+
 
 app.use(cors(corsOptions));
 
