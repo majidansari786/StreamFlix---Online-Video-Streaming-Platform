@@ -13,6 +13,7 @@ const { default: mongoose } = require("mongoose");
 const otpgen = require("otp-generator");
 const nodemailer = require("nodemailer");
 const otpModel = require("../model/otp");
+const WatchProgress = require('../model/watchProgress');
 
 async function getMovie(req, res) {
   try {
@@ -365,6 +366,7 @@ async function otpGenerator(req, res) {
     });
     res.status(200).json({ success: "otp sent successfully" });
   } catch (err) {
+    console.error("Error generating OTP:", err);
     res.status(400).json({ error: `${err}` });
   }
 }
@@ -390,6 +392,284 @@ async function otpVerify(req, res) {
   }
 }
 
+async function watchProgress(req,res) {
+  try {
+    const { userId, contentId, episodeId } = req.params
+    
+    // Verify user authentication
+    if (!req.user || req.user.id !== userId) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+    
+    const query = {
+      userId,
+      contentId,
+      contentType: episodeId ? 'episode' : 'movie'
+    }
+    
+    if (episodeId) {
+      query.episodeId = episodeId
+    }
+    
+    const progress = await WatchProgress.findOne(query)
+    
+    if (!progress) {
+      return res.status(404).json({ error: 'No progress found' })
+    }
+    
+    res.json(progress)
+  } catch (error) {
+    console.error('Error fetching watch progress:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+async function watchProgresSave(req,res) {
+  try {
+    const { userId } = req.params
+    const progressData = req.body
+    
+    // Verify user authentication
+    if (!req.user || req.user.id !== userId) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+    
+    // Validate required fields
+    if (!progressData.contentId || !progressData.contentType) {
+      return res.status(400).json({ error: 'Missing required fields' })
+    }
+    
+    // Ensure numeric values are valid
+    progressData.currentTime = Math.max(0, parseFloat(progressData.currentTime) || 0)
+    progressData.duration = Math.max(0, parseFloat(progressData.duration) || 0)
+    progressData.watchedPercentage = Math.min(100, Math.max(0, parseFloat(progressData.watchedPercentage) || 0))
+    
+    const query = {
+      userId,
+      contentId: progressData.contentId,
+      contentType: progressData.contentType
+    }
+    
+    if (progressData.episodeId) {
+      query.episodeId = progressData.episodeId
+    }
+    
+    const progress = await WatchProgress.findOneAndUpdate(
+      query,
+      { 
+        ...progressData, 
+        userId,
+        updatedAt: new Date() 
+      },
+      { upsert: true, new: true }
+    )
+    
+    res.json({ success: true, progress })
+  } catch (error) {
+    console.error('Error saving watch progress:', error)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+async function basicSearch(req,res) {
+  try {
+    const {
+      q: query,
+      genre,
+      year,
+      rating,
+      country,
+      sort = 'relevance',
+      limit = 20,
+      offset = 0,
+      type // 'movie', 'series', or 'all'
+    } = req.query
+
+    // Build search query
+    const searchQuery = {}
+    
+    // Text search across multiple fields
+    if (query) {
+      searchQuery.$or = [
+        { title: { $regex: query, $options: 'i' } },
+        { plot: { $regex: query, $options: 'i' } },
+        { genres: { $in: [new RegExp(query, 'i')] } },
+        { casts: { $in: [new RegExp(query, 'i')] } },
+        { directors: { $in: [new RegExp(query, 'i')] } }
+      ]
+    }
+
+    // Apply filters
+    if (genre) {
+      searchQuery.genres = { $in: [genre] }
+    }
+    
+    if (year) {
+      const startDate = new Date(`${year}-01-01`)
+      const endDate = new Date(`${year}-12-31`)
+      searchQuery.releaseDate = { $gte: startDate, $lte: endDate }
+    }
+    
+    if (rating) {
+      searchQuery.rating = { $gte: parseFloat(rating) }
+    }
+    
+    if (country) {
+      searchQuery.country = country
+    }
+
+    // Determine sort order
+    let sortQuery = {}
+    switch (sort) {
+      case 'title':
+        sortQuery = { title: 1 }
+        break
+      case 'year':
+        sortQuery = { releaseDate: -1 }
+        break
+      case 'rating':
+        sortQuery = { rating: -1 }
+        break
+      case 'relevance':
+      default:
+        // For text search, MongoDB will sort by relevance automatically
+        if (query) {
+          sortQuery = { score: { $meta: 'textScore' } }
+        } else {
+          sortQuery = { releaseDate: -1 }
+        }
+        break
+    }
+
+    let results = []
+
+    // Search movies and series based on type filter
+    if (!type || type === 'all' || type === 'movie') {
+      const movies = await movieapi.find(searchQuery)
+        .sort(sortQuery)
+        .limit(parseInt(limit))
+        .skip(parseInt(offset))
+        .lean()
+      
+      results = results.concat(movies.map(movie => ({ ...movie, type: 'movie' })))
+    }
+
+    if (!type || type === 'all' || type === 'series') {
+      const series = await seriesapi.find(searchQuery)
+        .sort(sortQuery)
+        .limit(parseInt(limit))
+        .skip(parseInt(offset))
+        .lean()
+      
+      results = results.concat(series.map(show => ({ ...show, type: 'series' })))
+    }
+
+    // Get total count for pagination
+    const totalMovies = !type || type === 'all' || type === 'movie' 
+      ? await movieapi.countDocuments(searchQuery) 
+      : 0
+    const totalSeries = !type || type === 'all' || type === 'series' 
+      ? await seriesapi.countDocuments(searchQuery) 
+      : 0
+    const totalResults = totalMovies + totalSeries
+
+    res.json({
+      results,
+      pagination: {
+        total: totalResults,
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        hasMore: (parseInt(offset) + parseInt(limit)) < totalResults
+      },
+      filters: {
+        availableGenres: await getAvailableGenres(),
+        availableCountries: await getAvailableCountries(),
+        availableYears: await getAvailableYears()
+      }
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+}
+
+async function getAvailableGenres() {
+  const [movieGenres, seriesGenres] = await Promise.all([
+    Movie.distinct('genres'),
+    Series.distinct('genres')
+  ])
+  return [...new Set([...movieGenres, ...seriesGenres])].sort()
+}
+
+async function getAvailableCountries() {
+  const [movieCountries, seriesCountries] = await Promise.all([
+    Movie.distinct('country'),
+    Series.distinct('country')
+  ])
+  return [...new Set([...movieCountries, ...seriesCountries])].sort()
+}
+
+async function getAvailableYears() {
+  const [movieYears, seriesYears] = await Promise.all([
+    Movie.distinct('releaseDate'),
+    Series.distinct('releaseDate')
+  ])
+  const allDates = [...movieYears, ...seriesYears]
+  const years = allDates.map(date => new Date(date).getFullYear())
+  return [...new Set(years)].sort((a, b) => b - a)
+}
+
+async function quickSearch(req,res) {
+  try {
+    const { q: query, limit = 10 } = req.query
+    
+    if (!query) {
+      return res.json([])
+    }
+
+    const searchQuery = {
+      $or: [
+        { title: { $regex: query, $options: 'i' } },
+        { genres: { $in: [new RegExp(query, 'i')] } }
+      ]
+    }
+
+    const [movies, series] = await Promise.all([
+      movieapi.find(searchQuery)
+        .select('title poster releaseDate rating')
+        .limit(parseInt(limit) / 2)
+        .lean(),
+      seriesapi.find(searchQuery)
+        .select('title poster releaseDate rating seasons')
+        .limit(parseInt(limit) / 2)
+        .lean()
+    ])
+
+    const suggestions = [
+      ...movies.map(movie => ({
+        _id: movie._id,
+        title: movie.title,
+        poster: movie.poster,
+        type: 'movie',
+        year: new Date(movie.releaseDate).getFullYear(),
+        rating: movie.rating
+      })),
+      ...series.map(show => ({
+        _id: show._id,
+        title: show.title,
+        poster: show.poster,
+        type: 'series',
+        year: new Date(show.releaseDate).getFullYear(),
+        rating: show.rating,
+        seasons: show.seasons
+      }))
+    ].slice(0, parseInt(limit))
+
+    res.json(suggestions)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+}
+
 module.exports = {
   addnewmovie,
   addnewseries,
@@ -405,4 +685,8 @@ module.exports = {
   seriesUpdateAll,
   otpGenerator,
   otpVerify,
+  watchProgresSave,
+  watchProgress,
+  basicSearch,
+  quickSearch
 };
