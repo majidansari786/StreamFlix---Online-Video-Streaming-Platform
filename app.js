@@ -13,7 +13,7 @@ connectdb();
 app.use(
   session({
     secret:
-      process.env.SECRET,
+      process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
   })
@@ -23,25 +23,16 @@ const port = process.env.PORT;
 const cors = require("cors");
 app.use(cookieParser());
 const { text } = require("body-parser");
-// const Corsoption = require('./config/Corsption')
 
-const whitelist = ["https://streamflix-frontend-beta.vercel.app"];
+// Import security configurations
+const { corsMiddleware, securityHeaders } = require('./config/corsConfig');
+const { securityConfig } = require('./config/security');
+app.use(corsMiddleware);
+app.options('*', corsMiddleware); 
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || whitelist.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: ["GET", "POST"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true, // Only works if origin is specific
-};
-
-
-app.use(cors(corsOptions));
+// Apply enhanced CORS and security headers
+app.use(securityHeaders);
+// ✅ Explicitly handle preflight requests
 
 //Cross origin sharing
 // app.use(cors(Corsoption));

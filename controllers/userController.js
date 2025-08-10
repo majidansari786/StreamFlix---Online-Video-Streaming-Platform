@@ -8,6 +8,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const { exec } = require("child_process");
+const axios = require("axios");
 // const Redis = require('ioredis');
 
 // const redis = new Redis();
@@ -20,9 +21,9 @@ async function getuser(req, res) {
   // const users = await User.find().select("_id email firstname lastname");
   // if(!userdata){
   //   await redis.set('userdata',users);
-    const usersdata = await User.find().select('email firstname lastname');
-    res.json(usersdata);
-  }
+  const usersdata = await User.find().select("email firstname lastname");
+  res.json(usersdata);
+}
 
 async function deleteuser(req, res) {
   try {
@@ -51,7 +52,19 @@ const getuserbyid = (req, res) => {
 };
 
 async function handleUserSignup(req, res) {
-  const { first_name, last_name, email, password } = req.body;
+  const { first_name, last_name, email, password, hcaptchaToken } = req.body;
+  if (!hcaptchaToken) {
+    return res.status(400).json({ error: "Missing hCaptcha token" });
+  }
+  const verifyUrl = "https://hcaptcha.com/siteverify";
+  const params = new URLSearchParams();
+  params.append("secret", process.env.HCAPTCHA_SECRET_KEY);
+  params.append("response", hcaptchaToken);
+  const hcaptchaRes = await axios.post(verifyUrl, params);
+  const hcaptchaData = hcaptchaRes.data;
+  if (!hcaptchaData.success) {
+    return res.status(403).json({ error: "hCaptcha verification failed" });
+  }
   const hash = await bcrypt.hash(password, 10);
   const newUser = new User({
     firstname: first_name,
@@ -73,39 +86,68 @@ async function handleUserSignup(req, res) {
 }
 
 async function handleUserLogin(req, res) {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-  if (!user) {
-    return res.status(404).json({ error: "User not found" });
+  const { email, password, hcaptchaToken } = req.body;
+
+  // 🔐 Step 1: Validate hCaptcha
+  if (!hcaptchaToken) {
+    return res.status(400).json({ error: "Missing hCaptcha token" });
   }
-  const match = await bcrypt.compare(password, user.password);
-  if (!match) {
-    return res.status(401).json({ error: "Invalid credentials" });
+
+  try {
+    const verifyUrl = "https://hcaptcha.com/siteverify";
+
+    const params = new URLSearchParams();
+    params.append("secret", process.env.HCAPTCHA_SECRET_KEY);
+    params.append("response", hcaptchaToken);
+
+    const hcaptchaRes = await axios.post(verifyUrl, params);
+    const hcaptchaData = hcaptchaRes.data;
+
+    if (!hcaptchaData.success) {
+      return res.status(403).json({ error: "hCaptcha verification failed" });
+    }
+
+    // ✅ Step 2: Continue with login
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const payload = { id: user._id, email: user.email };
+    const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
+      expiresIn: "1h",
+    });
+    const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
+      expiresIn: "7d",
+    });
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res
+      .cookie("userAcesstoken", accessToken, {
+        httpOnly: true,
+        secure: false, // Set to true in production if using HTTPS
+        sameSite: "Lax",
+        maxAge: 24 * 60 * 60 * 1000,
+      })
+      .cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: "Lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      })
+      .status(200)
+      .json({ message: "Login successful", email: user.email });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ error: "Server error" });
   }
-  const payload = { id: user._id, email: user.email };
-  const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN, {
-    expiresIn: "1h",
-  });
-  const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN, {
-    expiresIn: "7d",
-  });
-  user.refreshToken = refreshToken;
-  await user.save();
-  res
-    .cookie("userAcesstoken", accessToken, {
-      httpOnly: true,
-      secure: false, // ✅ Set to true only in HTTPS
-      sameSite: "Lax",
-      maxAge: 24 * 60 * 60 * 1000,
-    })
-    .cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "Lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    })
-    .status(200)
-    .json({ message: "Login successful", email: user.email });
 }
 
 async function logout(req, res) {
