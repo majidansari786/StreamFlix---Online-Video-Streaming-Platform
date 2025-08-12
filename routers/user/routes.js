@@ -9,6 +9,7 @@ const auth = require("../../middleware/auth");
 const upload = require("../../middleware/upload");
 const HighrateLimiter = require("../../middleware/Highratelimit");
 const LowrateLimiter = require("../../middleware/LowrateLimiter");
+const apiSecurity = require("../../middleware/apiSecurity");
 
 app = express();
 app.use(express.json());
@@ -17,7 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "../../views"));
 
-router.get("/", HighrateLimiter, usercontroller.getuser);
+router.get("/", apiSecurity,HighrateLimiter, usercontroller.getuser);
 
 router.get("/about", (req, res) => {
   res.render("about.ejs");
@@ -29,9 +30,9 @@ router.get("/login", HighrateLimiter, (req, res) => {
 
 router.get("/logout", HighrateLimiter, usercontroller.logout);
 
-router.post("/login", LowrateLimiter, usercontroller.handleUserLogin);
+router.post("/login", apiSecurity, LowrateLimiter, usercontroller.handleUserLogin);
 
-router.post("/signup", LowrateLimiter, usercontroller.handleUserSignup);
+router.post("/signup", apiSecurity, LowrateLimiter, usercontroller.handleUserSignup);
 
 router.get("/signup", (req, res) => {
   res.render("register.ejs");

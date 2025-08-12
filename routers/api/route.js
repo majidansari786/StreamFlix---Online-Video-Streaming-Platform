@@ -79,7 +79,6 @@ router.get("/movies/:id", apiSecurity, HighrateLimiter, videosController.getmovi
 router.get("/series/:id", apiSecurity, HighrateLimiter, videosController.getseriesbyIds);
 router.get(
   "/profile",
-  apiSecurity,
   auth,
   checkRole(["user", "admin"]),
   userController.userProfile
