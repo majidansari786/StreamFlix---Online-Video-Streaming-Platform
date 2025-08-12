@@ -14,7 +14,8 @@ const corsConfig = {
       'http://localhost:3000',
       'http://127.0.0.1:3000',
       'https://yourdomain.com', // Replace with your actual domain
-      'https://www.yourdomain.com'
+      'https://www.yourdomain.com',
+      'https://stream-frontend-dun-two.vercel.app/'
     ];
 
     // Check if origin is in whitelist
