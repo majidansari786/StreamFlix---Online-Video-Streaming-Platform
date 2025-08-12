@@ -12,10 +12,15 @@ const app = express();
 connectdb();
 app.use(
   session({
-    secret:
-      process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
   })
 );
 
@@ -27,12 +32,10 @@ const { text } = require("body-parser");
 // Import security configurations
 const { corsMiddleware, securityHeaders } = require('./config/corsConfig');
 const { securityConfig } = require('./config/security');
-app.use(corsMiddleware);
-app.options('*', corsMiddleware); 
 
 // Apply enhanced CORS and security headers
+app.use(corsMiddleware);
 app.use(securityHeaders);
-// ✅ Explicitly handle preflight requests
 
 //Cross origin sharing
 // app.use(cors(Corsoption));

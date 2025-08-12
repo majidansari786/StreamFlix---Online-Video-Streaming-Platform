@@ -52,19 +52,7 @@ const getuserbyid = (req, res) => {
 };
 
 async function handleUserSignup(req, res) {
-  const { first_name, last_name, email, password, hcaptchaToken } = req.body;
-  if (!hcaptchaToken) {
-    return res.status(400).json({ error: "Missing hCaptcha token" });
-  }
-  const verifyUrl = "https://hcaptcha.com/siteverify";
-  const params = new URLSearchParams();
-  params.append("secret", process.env.HCAPTCHA_SECRET_KEY);
-  params.append("response", hcaptchaToken);
-  const hcaptchaRes = await axios.post(verifyUrl, params);
-  const hcaptchaData = hcaptchaRes.data;
-  if (!hcaptchaData.success) {
-    return res.status(403).json({ error: "hCaptcha verification failed" });
-  }
+  const { first_name, last_name, email, password } = req.body;
   const hash = await bcrypt.hash(password, 10);
   const newUser = new User({
     firstname: first_name,
@@ -86,28 +74,10 @@ async function handleUserSignup(req, res) {
 }
 
 async function handleUserLogin(req, res) {
-  const { email, password, hcaptchaToken } = req.body;
-
-  // 🔐 Step 1: Validate hCaptcha
-  if (!hcaptchaToken) {
-    return res.status(400).json({ error: "Missing hCaptcha token" });
-  }
+  const { email, password } = req.body;
 
   try {
-    const verifyUrl = "https://hcaptcha.com/siteverify";
-
-    const params = new URLSearchParams();
-    params.append("secret", process.env.HCAPTCHA_SECRET_KEY);
-    params.append("response", hcaptchaToken);
-
-    const hcaptchaRes = await axios.post(verifyUrl, params);
-    const hcaptchaData = hcaptchaRes.data;
-
-    if (!hcaptchaData.success) {
-      return res.status(403).json({ error: "hCaptcha verification failed" });
-    }
-
-    // ✅ Step 2: Continue with login
+    // ✅ Continue with login
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ error: "User not found" });

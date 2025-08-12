@@ -39,7 +39,7 @@ async function auth(req, res, next) {
             res.cookie('userAcesstoken', newAccessToken, {
               httpOnly: true,
               secure: false, // true if production with HTTPS
-              sameSite: 'Strict',
+              sameSite: process.env.NODE_ENV === 'production' ? 'Strict' : 'Lax',
               maxAge: 60 * 60 * 1000,
             });
 
@@ -75,7 +75,7 @@ async function auth(req, res, next) {
       res.cookie('userAcesstoken', newAccessToken, {
         httpOnly: true,
         secure: false,
-        sameSite: 'Strict',
+        sameSite: process.env.NODE_ENV === 'production' ? 'Strict' : 'Lax',
         maxAge: 60 * 60 * 1000,
       });
 

@@ -1,7 +1,7 @@
 {
-  "name": "simple-todo-app",
+  "name": "StreamFlix Backend",
   "version": "1.0.0",
-  "description": "A simple TODO app using Node.js, Express, and EJS",
+  "description": "StreamFlix Backend, Express, and EJS",
   "main": "app.js",
   "scripts": {
     "start": "node app",
@@ -23,7 +23,6 @@
     "express": "^4.21.2",
     "express-rate-limit": "^8.0.1",
     "express-session": "^1.18.1",
-    "hcaptcha": "^0.2.0",
     "helmet": "^8.1.0",
     "ioredis": "^5.6.1",
     "jsonwebtoken": "^9.0.2",

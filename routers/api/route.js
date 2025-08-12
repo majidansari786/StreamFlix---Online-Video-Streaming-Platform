@@ -93,6 +93,24 @@ router.get('/api/search', apiSecurity, videosController.basicSearch);
 router.get('/api/search/suggestions', apiSecurity, videosController.quickSearch);
 router.get('/api/search', apiSecurity, videosController.basicSearch);
 
+// Download endpoints
+router.post('/download', apiSecurity, auth, checkRole(["user", "admin"]), (req, res) => {
+  // Mock download endpoint - implement actual download logic
+  res.json({ 
+    success: true, 
+    message: 'Download added to queue',
+    downloadId: Date.now().toString()
+  });
+});
+
+router.get('/downloads/:email', apiSecurity, auth, checkRole(["user", "admin"]), (req, res) => {
+  // Mock downloads endpoint - implement actual download tracking
+  res.json({ 
+    downloads: [],
+    message: 'No downloads found'
+  });
+});
+
 // Test endpoint to verify security
 router.get('/test', apiSecurity, (req, res) => {
   res.json({

@@ -13,10 +13,8 @@ const corsConfig = {
     const allowedOrigins = [
       'http://localhost:3000',
       'http://127.0.0.1:3000',
-      'http://localhost:5173',
       'https://yourdomain.com', // Replace with your actual domain
-      'https://www.yourdomain.com',
-      'https://stream-frontend-dun-two.vercel.app'
+      'https://www.yourdomain.com'
     ];
 
     // Check if origin is in whitelist
@@ -81,16 +79,28 @@ const corsMiddleware = cors(corsConfig);
 // Additional security headers middleware
 const securityHeaders = (req, res, next) => {
   // Security headers
-  res.set({
+  const baseHeaders = {
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
     'X-XSS-Protection': '1; mode=block',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
-    'Cross-Origin-Embedder-Policy': 'require-corp',
-    'Cross-Origin-Opener-Policy': 'same-origin',
-    'Cross-Origin-Resource-Policy': 'same-origin'
-  });
+    'Permissions-Policy': 'geolocation=(), microphone=(), camera=()'
+  };
+
+  if (process.env.NODE_ENV === 'production') {
+    res.set({
+      ...baseHeaders,
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Resource-Policy': 'same-origin'
+    });
+  } else {
+    // In development, relax cross-origin isolation to allow external images/media
+    res.set({
+      ...baseHeaders,
+      'Cross-Origin-Resource-Policy': 'cross-origin'
+    });
+  }
 
   // Remove sensitive headers
   res.removeHeader('X-Powered-By');
