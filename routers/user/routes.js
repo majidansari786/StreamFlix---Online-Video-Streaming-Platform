@@ -30,7 +30,7 @@ router.get("/login", HighrateLimiter, (req, res) => {
 
 router.get("/logout", HighrateLimiter, usercontroller.logout);
 
-router.post("/login", apiSecurity, LowrateLimiter, usercontroller.handleUserLogin);
+router.post("/login", LowrateLimiter, usercontroller.handleUserLogin);
 
 router.post("/signup", apiSecurity, LowrateLimiter, usercontroller.handleUserSignup);
 
