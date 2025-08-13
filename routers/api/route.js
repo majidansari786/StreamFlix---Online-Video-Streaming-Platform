@@ -63,20 +63,20 @@ router.post(
   userController.userwatchlist
 );
 
-router.post("/login", apiSecurity, LowrateLimiter, userController.handleUserLogin);
-router.post("/update/movie/:id", apiSecurity, videosController.movieUpdateAll);
-router.post("/update/series/:id", apiSecurity, videosController.seriesUpdateAll);
-router.post("/otpgenerate", apiSecurity, LowrateLimiter, videosController.otpGenerator);
-router.post("/otpverify", apiSecurity, LowrateLimiter, videosController.otpVerify);
-router.post("/api/watch-progress/:userId", apiSecurity, videosController.watchProgresSave);
+router.post("/login", LowrateLimiter, userController.handleUserLogin);
+router.post("/update/movie/:id", videosController.movieUpdateAll);
+router.post("/update/series/:id", videosController.seriesUpdateAll);
+router.post("/otpgenerate", LowrateLimiter, videosController.otpGenerator);
+router.post("/otpverify", LowrateLimiter, videosController.otpVerify);
+router.post("/api/watch-progress/:userId", videosController.watchProgresSave);
 
-router.get('/api/watch-progress/:userId/:contentId/:episodeId?', apiSecurity, videosController.watchProgress)
-router.get("/similar/:id", apiSecurity, HighrateLimiter, videosController.similar);
-router.get("/watchlist/:email", apiSecurity, HighrateLimiter, userController.listpage);
-router.get("/movies", apiSecurity, HighrateLimiter, videosController.getMovie);
-router.get("/series", apiSecurity, HighrateLimiter, videosController.getseries);
-router.get("/movies/:id", apiSecurity, HighrateLimiter, videosController.getmoviebyIds);
-router.get("/series/:id", apiSecurity, HighrateLimiter, videosController.getseriesbyIds);
+router.get('/api/watch-progress/:userId/:contentId/:episodeId?', videosController.watchProgress)
+router.get("/similar/:id", HighrateLimiter, videosController.similar);
+router.get("/watchlist/:email", HighrateLimiter, userController.listpage);
+router.get("/movies",  HighrateLimiter, videosController.getMovie);
+router.get("/series",  HighrateLimiter, videosController.getseries);
+router.get("/movies/:id",  HighrateLimiter, videosController.getmoviebyIds);
+router.get("/series/:id",  HighrateLimiter, videosController.getseriesbyIds);
 router.get(
   "/profile",
   auth,
@@ -85,15 +85,14 @@ router.get(
 );
 router.get(
   "/watch-progress/:userId/:contentId/:episodeId?",
-  apiSecurity,
   videosController.watchProgress
 );
-router.get('/api/search', apiSecurity, videosController.basicSearch);
-router.get('/api/search/suggestions', apiSecurity, videosController.quickSearch);
-router.get('/api/search', apiSecurity, videosController.basicSearch);
+router.get('/api/search',  videosController.basicSearch);
+router.get('/api/search/suggestions', videosController.quickSearch);
+router.get('/api/search', videosController.basicSearch);
 
 // Download endpoints
-router.post('/download', apiSecurity, auth, checkRole(["user", "admin"]), (req, res) => {
+router.post('/download',  auth, checkRole(["user", "admin"]), (req, res) => {
   // Mock download endpoint - implement actual download logic
   res.json({ 
     success: true, 
@@ -102,7 +101,7 @@ router.post('/download', apiSecurity, auth, checkRole(["user", "admin"]), (req, 
   });
 });
 
-router.get('/downloads/:email', apiSecurity, auth, checkRole(["user", "admin"]), (req, res) => {
+router.get('/downloads/:email',  auth, checkRole(["user", "admin"]), (req, res) => {
   // Mock downloads endpoint - implement actual download tracking
   res.json({ 
     downloads: [],
@@ -111,7 +110,7 @@ router.get('/downloads/:email', apiSecurity, auth, checkRole(["user", "admin"]),
 });
 
 // Test endpoint to verify security
-router.get('/test', apiSecurity, (req, res) => {
+router.get('/test', (req, res) => {
   res.json({
     message: 'Security test passed!',
     timestamp: new Date().toISOString(),
